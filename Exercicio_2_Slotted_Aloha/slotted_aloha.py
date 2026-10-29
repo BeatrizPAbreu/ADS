@@ -171,6 +171,19 @@ def write_station_csv(path: Path, states, pi, a: float, b: float):
             ])
 
 
+def write_transition_matrix(path: Path, states, p_matrix):
+    """Export the full transition matrix P as a labeled CSV table."""
+    labels = [
+        "E" if not state else "{" + ",".join(map(str, state)) + "}"
+        for state in states
+    ]
+    with path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(["from/to", *labels])
+        for label, row in zip(labels, p_matrix):
+            writer.writerow([label, *(f"{prob:.12g}" for prob in row)])
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="DTMC for adaptive Slotted Aloha with five stations."
@@ -200,6 +213,9 @@ def main():
         args.output_dir / "distribuicao_estacionaria.csv",
         states, pi, args.a, args.b
     )
+    write_transition_matrix(
+        args.output_dir / "matriz_transicao_P.csv", states, p_matrix
+    )
     with (args.output_dir / "resumo_resultados.json").open(
         "w", encoding="utf-8"
     ) as file:
@@ -225,6 +241,7 @@ def main():
     print(f"\nArquivos gerados em: {args.output_dir.resolve()}")
     print("  - resumo_resultados.json")
     print("  - distribuicao_estacionaria.csv")
+    print("  - matriz_transicao_P.csv")
     print(f"Soma de pi = {theory['stationary_distribution_sum']:.12f}")
     print(f"Maior erro na soma das linhas de P = {theory['maximum_row_sum_error']:.3e}")
 
