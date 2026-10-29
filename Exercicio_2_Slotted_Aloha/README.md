@@ -111,6 +111,16 @@ O programa monta a matriz \(P\), de dimensão \(27\times27\), diretamente a part
 
 O código mede o erro numérico máximo dessa condição e o imprime ao final.
 
+Um exemplo da linha correspondente ao estado vazio ajuda a conferir a matriz. Nesse estado, todas as estações usam \(a\):
+
+\[
+P_{\varnothing,\varnothing}=(1-a)^5+5a(1-a)^4.
+\]
+
+Para qualquer conjunto \(T\) com \(k\geq2\) estações, a probabilidade de ir do estado vazio a \(T\) é \(a^k(1-a)^{5-k}\). Com \(a=0{,}30\), a linha começa com \(P_{\varnothing,\varnothing}=0{,}52822\); cada estado de colisão de tamanho 2 tem probabilidade \(0{,}03087\), de tamanho 3 tem \(0{,}01323\), de tamanho 4 tem \(0{,}00567\) e de tamanho 5 tem \(0{,}00243\). Somando as 27 entradas dessa linha, obtém-se 1.
+
+O programa exporta a matriz completa para resultados/matriz_transicao_P.csv. As linhas identificam o estado atual e as colunas o próximo estado.
+
 ### 3.4 Diagrama de transições
 
 O diagrama completo tem 27 estados e muitas transições. A regra que permite reconstruí-lo sem desenhar 27 caixas é:
@@ -182,13 +192,15 @@ As três proporções devem somar 1, considerando pequenas diferenças de arredo
     ├── .gitignore
     └── resultados/                  (criada ao executar)
         ├── resumo_resultados.json
-        └── distribuicao_estacionaria.csv
+        ├── distribuicao_estacionaria.csv
+        └── matriz_transicao_P.csv
 
 - **slotted_aloha.py:** cria os 27 estados, monta \(P\), resolve a distribuição estacionária, calcula desempenho, executa a simulação e grava os resultados.
 - **test_model.py:** verifica propriedades matemáticas básicas do modelo.
 - **requirements.txt:** lista a dependência necessária.
 - **resultados/resumo_resultados.json:** reúne os resumos teórico e simulado.
 - **resultados/distribuicao_estacionaria.csv:** contém uma linha para cada estado, com a probabilidade estacionária e as métricas condicionais do slot.
+- **resultados/matriz_transicao_P.csv:** exporta a matriz de transição completa \(27\times27\); a primeira coluna identifica o estado de origem e as outras colunas indicam os estados de destino.
 
 A pasta de resultados é criada automaticamente quando o programa é executado. Arquivos CSV e JSON gerados são ignorados pelo Git para evitar que cada execução altere o repositório.
 
@@ -240,6 +252,7 @@ Para ver todos os resultados, abra:
 
 - resultados/resumo_resultados.json em um editor de texto.
 - resultados/distribuicao_estacionaria.csv no LibreOffice Calc, Excel ou outro leitor de CSV.
+- resultados/matriz_transicao_P.csv no LibreOffice Calc ou Excel para inspecionar os 27 × 27 elementos de \(P\).
 
 ### Passo 6 — Executar os testes
 
@@ -320,7 +333,7 @@ Para uma discussão mais completa, execute o programa com diferentes pares \(a,b
 ## 11. Checklist de entrega
 
 - [x] Definição e justificativa dos estados da DTMC.
-- [x] Matriz de transição \(P\) construída no código.
+- [x] Matriz de transição \(P\) construída e exportada em CSV.
 - [x] Distribuição estacionária calculada numericamente.
 - [x] Vazão média calculada.
 - [x] Proporção de slots ociosos calculada.
