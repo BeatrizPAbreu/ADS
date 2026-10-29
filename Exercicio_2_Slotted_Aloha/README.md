@@ -132,6 +132,16 @@ O diagrama completo tem 27 estados e muitas transições. A regra que permite re
 
 Assim, o diagrama e a matriz representam a mesma regra; cada entrada \(P_{S,T}\) é a probabilidade da seta de \(S\) para \(T\).
 
+Esquema geral das transições (os 27 estados concretos seguem essa mesma regra):
+
+```mermaid
+flowchart TD
+    S["Estado atual S"] -->|0 ou 1 transmissão| E["Estado seguinte: vazio ∅"]
+    S -->|2 ou mais transmitem, conjunto T| T["Estado seguinte: T"]
+```
+
+A seta para o estado vazio reúne os casos sem colisão; a seta para T existe para cada conjunto T com duas ou mais estações. A probabilidade de cada seta é calculada pelas fórmulas acima.
+
 ### 3.5 Distribuição estacionária
 
 A distribuição estacionária \(\pi\) representa a fração de longo prazo em cada estado. Ela é obtida resolvendo:
