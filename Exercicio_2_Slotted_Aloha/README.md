@@ -36,12 +36,12 @@ As tentativas de transmissão das estações são consideradas independentes, co
 
 O estado é o conjunto de estações que participaram da colisão no slot imediatamente anterior. O estado vazio representa a situação em que nenhuma estação precisa usar a probabilidade reduzida.
 
-$
+$$
 
 \mathcal{S}=\{\varnothing\}\cup
 \{S\subseteq\{1,2,3,4,5\}:|S|\geq 2\}.
 
-$
+$$
 
 Exemplos:
 
@@ -53,12 +53,12 @@ Um estado não vazio precisa ter no mínimo duas estações, porque uma colisão
 
 A quantidade de estados é:
 
-$
+$$
 
 |\mathcal{S}|=1+\sum_{k=2}^{5}\binom{5}{k}
 =1+(32-1-5)=27.
 
-$
+$$
 
 Essa representação guarda a informação necessária para definir as probabilidades de transmissão no próximo slot e, por isso, preserva a propriedade de Markov.
 
@@ -66,7 +66,7 @@ Essa representação guarda a informação necessária para definir as probabili
 
 Para um estado $S$, a probabilidade de transmissão da estação $i$ é:
 
-$
+$$
 
 p_i(S)=
 \begin{cases}
@@ -74,17 +74,17 @@ b,&i\in S,\\
 a,&i\notin S.
 \end{cases}
 
-$
+$$
 
 Se $T$ representa exatamente o conjunto de estações que transmitem no slot atual, então:
 
-$
+$$
 
 \Pr(T\mid S)=
 \prod_{i\in T}p_i(S)
 \prod_{j\notin T}(1-p_j(S)).
 
-$
+$$
 
 Essa expressão considera que as estações em $T$ transmitem e todas as demais ficam em silêncio.
 
@@ -92,17 +92,17 @@ Essa expressão considera que as estações em $T$ transmitem e todas as demais 
 
 O próximo estado é o conjunto exato de estações que colidiram no slot atual. Para um conjunto $T$ com pelo menos duas estações:
 
-$
+$$
 
 P_{S,T}=
 \prod_{i\in T}p_i(S)
 \prod_{j\notin T}(1-p_j(S)).
 
-$
+$$
 
 O próximo estado será vazio se zero ou uma estação transmitir:
 
-$
+$$
 
 P_{S,\varnothing}=
 \prod_{i=1}^{5}(1-p_i(S))
@@ -110,28 +110,28 @@ P_{S,\varnothing}=
 \sum_{i=1}^{5}p_i(S)
 \prod_{\substack{j=1\\j\ne i}}^{5}(1-p_j(S)).
 
-$
+$$
 
 O primeiro termo é a probabilidade de slot ocioso. A soma é a probabilidade de exatamente uma estação transmitir. Ambos levam ao estado vazio porque não há uma nova colisão que provoque adaptação.
 
 O programa monta a matriz $P$, de dimensão $27\times27$, diretamente a partir dessas probabilidades. Uma verificação importante é:
 
-$
+$$
 
 \sum_{T\in\mathcal{S}}P_{S,T}=1
 \quad\text{para cada estado }S.
 
-$
+$$
 
 O código mede o erro numérico máximo dessa condição e o imprime ao final.
 
 Um exemplo da linha correspondente ao estado vazio ajuda a conferir a matriz. Nesse estado, todas as estações usam $a$:
 
-$
+$$
 
 P_{\varnothing,\varnothing}=(1-a)^5+5a(1-a)^4.
 
-$
+$$
 
 Para qualquer conjunto $T$ com $k\geq2$ estações, a probabilidade de ir do estado vazio a $T$ é $a^k(1-a)^{5-k}$. Com $a=0{,}30$, a linha começa com $P_{\varnothing,\varnothing}=0{,}52822$; cada estado de colisão de tamanho 2 tem probabilidade $0{,}03087$, de tamanho 3 tem $0{,}01323$, de tamanho 4 tem $0{,}00567$ e de tamanho 5 tem $0{,}00243$. Somando as 27 entradas dessa linha, obtém-se 1.
 
@@ -162,12 +162,12 @@ A seta para o estado vazio reúne os casos sem colisão; a seta para T existe pa
 
 A distribuição estacionária $\pi$ representa a fração de longo prazo em cada estado. Ela é obtida resolvendo:
 
-$
+$$
 
 \pi P=\pi,\qquad
 \sum_{S\in\mathcal{S}}\pi_S=1.
 
-$
+$$
 
 O programa resolve numericamente esse sistema com NumPy. Como $0<b<a<1$, cada padrão possível de transmissão tem probabilidade positiva. A cadeia definida é comunicante e possui distribuição estacionária única.
 
@@ -175,20 +175,20 @@ O programa resolve numericamente esse sistema com NumPy. Como $0<b<a<1$, cada pa
 
 A probabilidade de sucesso em um estado $S$ é a probabilidade de exatamente uma das cinco estações transmitir:
 
-$
+$$
 
 Q(S)=\sum_{i=1}^{5}
 p_i(S)\prod_{\substack{j=1\\j\ne i}}^{5}(1-p_j(S)).
 
-$
+$$
 
 Como cada slot bem-sucedido entrega exatamente um pacote, a vazão média é:
 
-$
+$$
 
 \boxed{Q=\sum_{S\in\mathcal{S}}\pi_S Q(S)}
 
-$
+$$
 
 A unidade é pacotes entregues por slot.
 
@@ -196,27 +196,27 @@ A unidade é pacotes entregues por slot.
 
 A probabilidade de nenhuma estação transmitir, dado o estado $S$, é:
 
-$
+$$
 
 I(S)=\prod_{i=1}^{5}(1-p_i(S)).
 
-$
+$$
 
 A proporção média de slots ociosos é:
 
-$
+$$
 
 \boxed{I=\sum_{S\in\mathcal{S}}\pi_S I(S)}
 
-$
+$$
 
 Como verificação adicional, a proporção de slots com colisão é calculada por:
 
-$
+$$
 
 C=1-Q-I.
 
-$
+$$
 
 As três proporções devem somar 1, considerando pequenas diferenças de arredondamento.
 
