@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""DTMC analysis of adaptive Slotted Aloha with five stations."""
+"""DTMC analysis of adaptive Slotted Aloha with six aggregated states."""
 from __future__ import annotations
 
 import argparse
@@ -7,65 +7,90 @@ import csv
 import json
 import math
 import random
-from itertools import combinations
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
 
 N_STATIONS = 5
-State = Tuple[int, ...]  # 1-based IDs of stations using b in the current slot
+State = int  # Number of transmissions in the previous slot: 0, 1, ..., 5
 
 
 def enumerate_states(n: int = N_STATIONS) -> List[State]:
-    """Empty state plus every possible collision set (size at least two)."""
-    states: List[State] = [()]
-    for size in range(2, n + 1):
-        states.extend(combinations(range(1, n + 1), size))
-    return states
+    """Return the n+1 aggregated states E0, E1, ..., En."""
+    return list(range(n + 1))
+
+
+def low_probability_count(state: State, n: int = N_STATIONS) -> int:
+    """Number of stations using b now, based on the previous slot outcome.
+
+    E0 is an idle slot and E1 is a successful one-station transmission. Neither
+    causes adaptation. For Ek with k >= 2, exactly k stations collided and use b.
+    """
+    if not isinstance(state, int) or not 0 <= state <= n:
+        raise ValueError(f"State must be an integer from 0 to {n}.")
+    return state if state >= 2 else 0
 
 
 def station_probabilities(state: State, a: float, b: float,
                           n: int = N_STATIONS) -> List[float]:
-    """Transmission probability for each station in the current slot."""
-    low_probability_stations = set(state)
-    return [b if station in low_probability_stations else a
-            for station in range(1, n + 1)]
+    """Transmission probabilities for a representative set of stations.
+
+    Since stations are homogeneous, only the number using b matters for total
+    throughput. The first k entries represent the k stations involved in the
+    previous collision; their identities do not affect aggregate results.
+    """
+    k = low_probability_count(state, n)
+    return [b if station < k else a for station in range(n)]
 
 
-def outcome_probability(transmitting: State, probs: List[float]) -> float:
-    """Probability that exactly the stations in transmitting transmit."""
-    selected = set(transmitting)
-    result = 1.0
-    for station, prob in enumerate(probs, start=1):
-        result *= prob if station in selected else (1.0 - prob)
-    return result
+def count_probability(current_state: State, next_count: int,
+                      a: float, b: float, n: int = N_STATIONS) -> float:
+    """Probability that exactly next_count stations transmit in the next slot.
+
+    This is a Poisson-binomial count. Of the k stations using b, r transmit;
+    of the remaining n-k stations using a, next_count-r transmit.
+    """
+    if not 0 <= next_count <= n:
+        raise ValueError(f"next_count must be between 0 and {n}.")
+
+    k = low_probability_count(current_state, n)
+    normal_count = n - k
+    probability = 0.0
+    min_reduced = max(0, next_count - normal_count)
+    max_reduced = min(next_count, k)
+
+    for reduced_transmissions in range(min_reduced, max_reduced + 1):
+        normal_transmissions = next_count - reduced_transmissions
+        probability += (
+            math.comb(k, reduced_transmissions)
+            * b ** reduced_transmissions
+            * (1.0 - b) ** (k - reduced_transmissions)
+            * math.comb(normal_count, normal_transmissions)
+            * a ** normal_transmissions
+            * (1.0 - a) ** (normal_count - normal_transmissions)
+        )
+    return probability
 
 
 def build_transition_matrix(a: float, b: float, n: int = N_STATIONS):
-    """Build P. The next state is the collision set observed in this slot."""
+    """Build the (n+1) x (n+1) transition matrix over E0, ..., En.
+
+    The next state is the number of stations transmitting in the current slot:
+    0 means idle, 1 means successful transmission, and 2..n means collision.
+    """
     states = enumerate_states(n)
-    index: Dict[State, int] = {state: i for i, state in enumerate(states)}
     p_matrix = np.zeros((len(states), len(states)), dtype=float)
-    collision_states = states[1:]
-
     for row, current_state in enumerate(states):
-        probs = station_probabilities(current_state, a, b, n)
-
-        # No collision: zero or one station transmits, so next state is empty.
-        p_matrix[row, index[()]] = outcome_probability((), probs)
-        for station in range(1, n + 1):
-            p_matrix[row, index[()]] += outcome_probability((station,), probs)
-
-        # Two or more transmissions: the exact transmitting set collides.
-        for next_state in collision_states:
-            p_matrix[row, index[next_state]] = outcome_probability(next_state, probs)
-
+        for column, next_state in enumerate(states):
+            p_matrix[row, column] = count_probability(
+                current_state, next_state, a, b, n
+            )
     return states, p_matrix
 
 
 def stationary_distribution(p_matrix: np.ndarray) -> np.ndarray:
-    """Solve pi P = pi and sum(pi) = 1 by replacing one dependent equation."""
+    """Solve pi P = pi with sum(pi) = 1."""
     n_states = p_matrix.shape[0]
     system = p_matrix.T - np.eye(n_states)
     rhs = np.zeros(n_states)
@@ -78,7 +103,7 @@ def stationary_distribution(p_matrix: np.ndarray) -> np.ndarray:
 
 
 def per_state_metrics(state: State, a: float, b: float,
-                      n: int = N_STATIONS):
+                      n: int = N_STATIONS) -> Tuple[float, float, float]:
     """Return idle, successful-transmission, and collision probabilities."""
     probs = station_probabilities(state, a, b, n)
     idle = math.prod(1.0 - p for p in probs)
@@ -117,26 +142,21 @@ def theoretical_results(a: float, b: float, n: int = N_STATIONS):
 
 def simulate(a: float, b: float, slots: int, seed: int,
              n: int = N_STATIONS):
-    """Simulate slots using the same one-slot adaptive rule as the DTMC."""
+    """Simulate the six-state aggregate chain using Monte Carlo slots."""
     rng = random.Random(seed)
-    state: State = ()
+    state: State = 0
     successes = idle_slots = collision_slots = 0
 
     for _ in range(slots):
         probs = station_probabilities(state, a, b, n)
-        transmitting = tuple(
-            station for station, prob in enumerate(probs, start=1)
-            if rng.random() < prob
-        )
-        if len(transmitting) == 0:
+        transmitting_count = sum(rng.random() < prob for prob in probs)
+        if transmitting_count == 0:
             idle_slots += 1
-            state = ()
-        elif len(transmitting) == 1:
+        elif transmitting_count == 1:
             successes += 1
-            state = ()
         else:
             collision_slots += 1
-            state = transmitting
+        state = transmitting_count
 
     return {
         "slots": slots,
@@ -150,20 +170,34 @@ def simulate(a: float, b: float, slots: int, seed: int,
     }
 
 
+def state_label(state: State) -> str:
+    return f"E{state}"
+
+
+def previous_event_label(state: State) -> str:
+    if state == 0:
+        return "Idle slot"
+    if state == 1:
+        return "Successful transmission"
+    return f"Collision involving {state} stations"
+
+
 def write_station_csv(path: Path, states, pi, a: float, b: float):
-    """Write stationary state probabilities and conditional slot metrics."""
+    """Write stationary probabilities and conditional slot metrics by state."""
     with path.open("w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerow([
-            "state", "stations_using_b", "stationary_probability",
-            "idle_probability", "success_probability", "collision_probability"
+            "state", "previous_slot_event", "stations_using_b",
+            "stationary_probability", "idle_probability",
+            "success_probability", "collision_probability"
         ])
         for i, state in enumerate(states):
             idle, success, collision = per_state_metrics(state, a, b)
-            label = "E" if not state else "{" + ",".join(map(str, state)) + "}"
+            reduced_count = low_probability_count(state)
             writer.writerow([
-                label,
-                "-" if not state else ",".join(map(str, state)),
+                state_label(state),
+                previous_event_label(state),
+                "-" if reduced_count == 0 else reduced_count,
                 f"{pi[i]:.12g}",
                 f"{idle:.12g}",
                 f"{success:.12g}",
@@ -172,11 +206,8 @@ def write_station_csv(path: Path, states, pi, a: float, b: float):
 
 
 def write_transition_matrix(path: Path, states, p_matrix):
-    """Export the full transition matrix P as a labeled CSV table."""
-    labels = [
-        "E" if not state else "{" + ",".join(map(str, state)) + "}"
-        for state in states
-    ]
+    """Export the labeled (n+1) x (n+1) transition matrix P as CSV."""
+    labels = [state_label(state) for state in states]
     with path.open("w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerow(["from/to", *labels])
@@ -186,7 +217,7 @@ def write_transition_matrix(path: Path, states, p_matrix):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="DTMC for adaptive Slotted Aloha with five stations."
+        description="Six-state DTMC for adaptive Slotted Aloha with five stations."
     )
     parser.add_argument("--a", type=float, default=0.30,
                         help="normal transmission probability (default: 0.30)")
