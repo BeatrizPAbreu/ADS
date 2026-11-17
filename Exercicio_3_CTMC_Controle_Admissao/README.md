@@ -1,137 +1,89 @@
-# Miniprojeto CTMC — Controle de Admissão (Etapa 1)
+# Miniprojeto CTMC — Controle de Admissão
 
 Disciplina: **ADS29009 — Avaliação de Desempenho de Sistemas**
 
-Este exercício modela uma rede com duas classes de tráfego por meio de uma **Cadeia de Markov a Tempo Contínuo (CTMC)**. A Etapa 1 implementa a geração dos estados válidos e a construção da matriz de transição infinitesimal Q.
+Modelagem e análise de uma rede com duas classes de tráfego por meio de uma Cadeia de Markov a Tempo Contínuo (CTMC).
 
-## 1. Descrição do exercício
+## Parâmetros do sistema
 
-A rede possui capacidade total de C = 5 unidades. Existem duas classes:
+- Capacidade total: C = 5 unidades.
+- Reserva mínima para tráfego prioritário T1: R = 2 unidades.
+- Chegadas: lambda1 = 10 req/min e lambda2 = 15 req/min.
+- Serviços: mu1 = 15 req/min e mu2 = 25 req/min.
 
-- **T1 — prioritária:** possui prioridade de admissão;
-- **T2 — não prioritária:** deve respeitar a reserva de duas unidades destinada a T1.
+O estado é (n1,n2), em que n1 e n2 são as conexões T1 e T2. Os estados válidos respeitam n1+n2 ≤ 5 e n2 ≤ C-R=3.
 
-Cada conexão ocupa uma unidade. O estado é (n1, n2), em que n1 e n2 representam as quantidades de conexões T1 e T2.
+## Estrutura
 
-Os estados válidos respeitam:
-
-\[
-n_1+n_2\leq 5,\qquad n_2\leq 5-2=3.
-\]
-
-O modelo possui **18 estados válidos**. A matriz Q contém as taxas de chegada e saída entre esses estados.
-
-### Parâmetros
-
-| Parâmetro | Valor | Unidade |
-|---|---:|---|
-| lambda1 — chegada T1 | 10 | req/min |
-| lambda2 — chegada T2 | 15 | req/min |
-| mu1 — serviço T1 | 15 | req/min |
-| mu2 — serviço T2 | 25 | req/min |
-
-## 2. Arquivos desta pasta
-
-~~~text
+\`\`\`text
 Exercicio_3_CTMC_Controle_Admissao/
 ├── README.md
 ├── MODELAGEM_ETAPA_1.md
+├── ETAPA_2_RESULTADOS.md
 ├── modelagem_ctmc.py
+├── analise_ctmc.py
 ├── test_modelagem_ctmc.py
+├── test_analise_ctmc.py
 ├── requirements.txt
 └── resultados/
     ├── estados.csv
-    └── matriz_Q.csv
-~~~
+    ├── matriz_Q.csv
+    ├── distribuicao_estacionaria.csv
+    └── indicadores_etapa2.csv
+\`\`\`
 
-- **MODELAGEM_ETAPA_1.md:** explicação matemática, estados, transições e observação sobre o enunciado.
-- **modelagem_ctmc.py:** gera os 18 estados, constrói e valida Q, exibe os resultados e exporta CSVs.
-- **test_modelagem_ctmc.py:** testes automáticos da implementação.
-- **requirements.txt:** dependência Python necessária.
-- **resultados/:** exemplos dos CSVs gerados pelo programa. A pasta também é atualizada quando o programa é executado.
+## Preparação do ambiente
 
-## 3. Pré-requisitos
-
-- Python 3.10 ou superior;
-- pip;
-- terminal (Linux, macOS ou PowerShell no Windows).
-
-## 4. Como preparar o ambiente
-
-Abra o terminal dentro desta pasta.
+Requer Python 3.10 ou superior e pip.
 
 ### Linux / macOS
 
-~~~bash
+\`\`\`bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-~~~
+\`\`\`
 
 ### Windows (PowerShell)
 
-~~~powershell
+\`\`\`powershell
 py -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.\\.venv\\Scripts\\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-~~~
+\`\`\`
 
-Se o PowerShell bloquear a ativação do ambiente virtual, pode executar o Python diretamente com **.venv\Scripts\python.exe** ou ajustar a política de execução para o usuário conforme as regras do computador.
+## Etapa 1 — Estados e matriz Q
 
-## 5. Como executar / “compilar”
-
-Python é uma linguagem interpretada; não é necessário gerar um executável previamente. Com o ambiente virtual ativado, execute:
-
-~~~bash
+\`\`\`bash
 python modelagem_ctmc.py
-~~~
+\`\`\`
 
-O programa:
+Gera os 18 estados válidos, constrói a matriz infinitesimal Q (18 × 18), verifica se cada linha soma zero e exporta estados.csv e matriz_Q.csv para a pasta resultados/.
 
-1. gera a lista de estados na ordem (n1,n2);
-2. constrói a matriz Q de dimensão 18 × 18;
-3. verifica as propriedades estruturais da matriz;
-4. imprime os estados e a matriz no terminal;
-5. cria a pasta resultados/ e grava estados.csv e matriz_Q.csv.
+## Etapa 2 — Equilíbrio e indicadores
 
-Para escolher outra pasta de saída:
+\`\`\`bash
+python analise_ctmc.py
+\`\`\`
 
-~~~bash
-python modelagem_ctmc.py --saida minha_saida
-~~~
+Resolve pi Q = 0 com soma(pi)=1, confere a solução pela forma-produto e calcula os indicadores de desempenho. Exporta distribuicao_estacionaria.csv e indicadores_etapa2.csv para a pasta resultados/.
 
-Os arquivos CSV podem ser abertos no Excel ou LibreOffice Calc.
+A saída inclui duas interpretações do bloqueio T2: a expressão literal da página 14 (n2=R) e a regra coerente com a matriz Q (n2=C-R). O motivo está documentado em ETAPA_2_RESULTADOS.md e precisa ser confirmado com o professor.
 
-## 6. Como executar os testes
+## Testes automatizados
 
-Com o ambiente virtual ativado:
-
-~~~bash
+\`\`\`bash
 python -m unittest -v
-~~~
+\`\`\`
 
-Os testes conferem os 18 estados, as restrições de capacidade/reserva, a dimensão de Q, as taxas de transição e a soma zero das linhas.
+O comando executa os testes das Etapas 1 e 2.
 
-## 7. Resultado esperado
+## Observação sobre o bloqueio T2
 
-Ao final da execução, o terminal deve informar:
+A página 11 limita n2 a C-R=3 e a matriz Q segue essa regra. A página 14, porém, usa n2=R=2 na definição de bloqueio de T2. Como as condições divergem, o programa apresenta os dois cálculos separadamente sem escolher silenciosamente um deles.
 
-~~~text
-Quantidade de estados: 18
-Dimensão de Q: 18 x 18
-Matriz Q construída e validada com sucesso.
-~~~
+## Próxima etapa
 
-A soma de cada linha de Q deve ser zero (com tolerância numérica). Se algum teste falhar, a implementação deve ser revisada antes de avançar para o cálculo da distribuição estacionária.
-
-## 8. Atenção: divergência no enunciado sobre bloqueio de T2
-
-Na página 11, os estados válidos são definidos por n2 ≤ C-R = 3, e a construção da matriz Q segue essa restrição. Porém, a página 14 apresenta a condição n2 = R = 2 como condição de bloqueio de T2. As duas regras não coincidem.
-
-Para a **Etapa 1**, o código segue o conjunto de estados e as transições válidas: T2 pode chegar a três conexões. A fórmula de bloqueio de T2 será tratada explicitamente na etapa dos indicadores, após confirmar com o professor qual condição deve prevalecer.
-
-## 9. Próxima etapa
-
-Com os estados e a matriz Q validados, a próxima etapa será resolver o sistema de equilíbrio pi Q = 0, com a normalização soma(pi) = 1, e calcular os indicadores de desempenho solicitados.
+A Etapa 3 implementará uma simulação da CTMC durante T=10.000 minutos e comparará a distribuição e os indicadores simulados com os resultados analíticos desta etapa.

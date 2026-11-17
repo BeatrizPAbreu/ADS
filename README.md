@@ -8,4 +8,4 @@ A pasta [Exercicio_2_Slotted_Aloha/](Exercicio_2_Slotted_Aloha/) contém a model
 
 ## Exercício 3 — CTMC: Controle de Admissão
 
-A pasta [Exercicio_3_CTMC_Controle_Admissao/](Exercicio_3_CTMC_Controle_Admissao/) contém a documentação e a implementação da Etapa 1 do miniprojeto de Cadeias de Markov a Tempo Contínuo: geração dos 18 estados válidos, construção e validação da matriz infinitesimal Q, testes automatizados e exportação dos resultados em CSV.
+A pasta [Exercicio_3_CTMC_Controle_Admissao/](Exercicio_3_CTMC_Controle_Admissao/) contém as Etapas 1 e 2 do miniprojeto CTMC: geração de 18 estados, matriz infinitesimal Q, distribuição estacionária pi, cálculo dos indicadores de desempenho, testes automatizados e arquivos CSV com os resultados. A Etapa 3 será dedicada à simulação de 10.000 minutos.
