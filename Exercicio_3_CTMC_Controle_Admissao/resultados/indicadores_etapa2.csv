@@ -1,0 +1,8 @@
+indicador,valor,unidade
+Probabilidade de bloqueio T1,0.006489814812,probabilidade
+Probabilidade de bloqueio T2 (literal da página 14),0.102741938991,probabilidade
+Probabilidade de bloqueio T2 (regra de admissão consistente com Q),0.023475483785,probabilidade
+Utilização média do sistema,0.249650966638,fração da capacidade
+Número médio de conexões T1,0.662340123459,conexões
+Número médio de conexões T2,0.585914709729,conexões
+Fração do tempo em capacidade máxima,0.006489814812,fração do tempo
